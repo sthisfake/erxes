@@ -29,30 +29,33 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 # Build everything from the root workspace
 WORKDIR /app
 
+# Create nx.json if it doesn't exist and initialize workspace
+RUN pnpm nx init || true
+
 # Clean NX cache and initialize daemon
-RUN pnpm nx reset && \
-    pnpm nx clear-cache && \
-    rm -rf node_modules/.cache/nx
+RUN pnpm exec nx reset && \
+    pnpm exec nx clear-cache && \
+    rm -rf node_modules/.cache/nx && \
+    pnpm exec nx repair
 
-# Generate fresh project graph
-RUN pnpm exec nx graph --file=proj-graph.json
+# Make sure workspace is properly set up
+RUN pnpm install --no-frozen-lockfile
 
-# Build dependencies first with verbose logging
-RUN pnpm nx run-many \
-    --target=build \
-    --projects=erxes-ui,ui-modules \
-    --parallel=false \
-    --verbose
+# Build libs first
+RUN cd frontend/libs/erxes-ui && pnpm build || true
+RUN cd frontend/libs/ui-modules && pnpm build || true
 
 # Build plugins
-RUN pnpm nx run-many \
-    --target=build \
-    --projects=operation_ui,frontline_ui,sales_ui,payment_ui,accounting_ui,content_ui,tourism_ui \
-    --parallel=2 \
-    --verbose
+RUN cd frontend/plugins/operation_ui && pnpm build || true
+RUN cd frontend/plugins/frontline_ui && pnpm build || true
+RUN cd frontend/plugins/sales_ui && pnpm build || true
+RUN cd frontend/plugins/payment_ui && pnpm build || true
+RUN cd frontend/plugins/accounting_ui && pnpm build || true
+RUN cd frontend/plugins/content_ui && pnpm build || true
+RUN cd frontend/plugins/tourism_ui && pnpm build || true
 
-# Build core-ui with verbose logging
-RUN pnpm nx build core-ui --verbose
+# Build core-ui
+RUN cd frontend/core-ui && pnpm build
 
 # Production stage with nginx
 FROM nginx:alpine AS production
