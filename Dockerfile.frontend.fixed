@@ -29,14 +29,30 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 # Build everything from the root workspace
 WORKDIR /app
 
-# Reset NX cache and graph before building
-RUN pnpm nx reset
+# Clean NX cache and initialize daemon
+RUN pnpm nx reset && \
+    pnpm nx clear-cache && \
+    rm -rf node_modules/.cache/nx
 
-# Build all projects in parallel using run-many
-RUN pnpm nx run-many --target=build --all --parallel=3 || echo "Build completed with some warnings"
+# Generate fresh project graph
+RUN pnpm exec nx graph --file=proj-graph.json
 
-# Build core-ui separately to ensure it builds after dependencies
-RUN pnpm nx build core-ui
+# Build dependencies first with verbose logging
+RUN pnpm nx run-many \
+    --target=build \
+    --projects=erxes-ui,ui-modules \
+    --parallel=false \
+    --verbose
+
+# Build plugins
+RUN pnpm nx run-many \
+    --target=build \
+    --projects=operation_ui,frontline_ui,sales_ui,payment_ui,accounting_ui,content_ui,tourism_ui \
+    --parallel=2 \
+    --verbose
+
+# Build core-ui with verbose logging
+RUN pnpm nx build core-ui --verbose
 
 # Production stage with nginx
 FROM nginx:alpine AS production
