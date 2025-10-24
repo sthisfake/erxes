@@ -22,6 +22,9 @@ RUN pnpm install --no-frozen-lockfile
 # Build stage
 FROM deps AS build
 
+# Set Node memory limit for builds
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
 # Build shared library first
 WORKDIR /app/backend/erxes-api-shared
 RUN pnpm build
