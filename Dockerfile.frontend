@@ -18,7 +18,7 @@ COPY core-libraries.ts ./
 
 # Install dependencies
 FROM base AS deps
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Build stage
 FROM deps AS build
