@@ -29,20 +29,13 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 # Build everything from the root workspace
 WORKDIR /app
 
-# Build shared libraries
-RUN pnpm nx build erxes-ui || echo "Build completed with warnings"
-RUN pnpm nx build ui-modules || echo "Build completed with warnings"
+# Reset NX cache and graph before building
+RUN pnpm nx reset
 
-# Build plugins
-RUN pnpm nx build operation_ui || echo "Build completed with warnings"
-RUN pnpm nx build frontline_ui || echo "Build completed with warnings"
-RUN pnpm nx build sales_ui || echo "Build completed with warnings"
-RUN pnpm nx build payment_ui || echo "Build completed with warnings"
-RUN pnpm nx build accounting_ui || echo "Build completed with warnings"
-RUN pnpm nx build content_ui || echo "Build completed with warnings"
-RUN pnpm nx build tourism_ui || echo "Build completed with warnings"
+# Build all projects in parallel using run-many
+RUN pnpm nx run-many --target=build --all --parallel=3 || echo "Build completed with some warnings"
 
-# Build core-ui (main application)
+# Build core-ui separately to ensure it builds after dependencies
 RUN pnpm nx build core-ui
 
 # Production stage with nginx
