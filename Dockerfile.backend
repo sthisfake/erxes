@@ -1,0 +1,184 @@
+# Multi-stage Dockerfile for erxes backend services
+FROM node:18-alpine AS base
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY nx.json tsconfig.base.json ./
+
+# Copy backend source
+COPY backend ./backend
+COPY core-libraries.ts ./
+
+# Install dependencies
+FROM base AS deps
+RUN pnpm install --frozen-lockfile
+
+# Build stage
+FROM deps AS build
+
+# Build shared library first
+WORKDIR /app/backend/erxes-api-shared
+RUN pnpm build
+
+# Build core-api
+WORKDIR /app/backend/core-api
+RUN pnpm build
+
+# Build gateway
+WORKDIR /app/backend/gateway
+RUN pnpm build
+
+# Build services
+WORKDIR /app/backend/services/automations
+RUN pnpm build
+
+WORKDIR /app/backend/services/logs
+RUN pnpm build
+
+# Build plugins (only enabled ones)
+WORKDIR /app/backend/plugins/operation_api
+RUN pnpm build
+
+WORKDIR /app/backend/plugins/frontline_api
+RUN pnpm build
+
+WORKDIR /app/backend/plugins/sales_api
+RUN pnpm build
+
+WORKDIR /app/backend/plugins/payment_api
+RUN pnpm build
+
+WORKDIR /app/backend/plugins/accounting_api
+RUN pnpm build
+
+WORKDIR /app/backend/plugins/content_api
+RUN pnpm build
+
+WORKDIR /app/backend/plugins/tourism_api
+RUN pnpm build
+
+WORKDIR /app/backend/plugins/posclient_api
+RUN pnpm build
+
+# Production stage for core-api
+FROM node:18-alpine AS core-api
+
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY nx.json tsconfig.base.json ./
+
+# Copy built files
+COPY --from=build /app/backend/erxes-api-shared ./backend/erxes-api-shared
+COPY --from=build /app/backend/core-api ./backend/core-api
+
+# Install production dependencies only
+RUN pnpm install --prod --frozen-lockfile
+
+WORKDIR /app/backend/core-api
+
+EXPOSE 3300
+
+CMD ["pnpm", "start"]
+
+# Production stage for gateway
+FROM node:18-alpine AS gateway
+
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY nx.json tsconfig.base.json ./
+
+# Copy built files
+COPY --from=build /app/backend/erxes-api-shared ./backend/erxes-api-shared
+COPY --from=build /app/backend/gateway ./backend/gateway
+
+# Install production dependencies only
+RUN pnpm install --prod --frozen-lockfile
+
+WORKDIR /app/backend/gateway
+
+EXPOSE 4000
+
+CMD ["pnpm", "start"]
+
+# Production stage for automations service
+FROM node:18-alpine AS automations
+
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY nx.json tsconfig.base.json ./
+
+# Copy built files
+COPY --from=build /app/backend/erxes-api-shared ./backend/erxes-api-shared
+COPY --from=build /app/backend/services/automations ./backend/services/automations
+
+# Install production dependencies only
+RUN pnpm install --prod --frozen-lockfile
+
+WORKDIR /app/backend/services/automations
+
+EXPOSE 3400
+
+CMD ["pnpm", "start"]
+
+# Production stage for logs service
+FROM node:18-alpine AS logs
+
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY nx.json tsconfig.base.json ./
+
+# Copy built files
+COPY --from=build /app/backend/erxes-api-shared ./backend/erxes-api-shared
+COPY --from=build /app/backend/services/logs ./backend/services/logs
+
+# Install production dependencies only
+RUN pnpm install --prod --frozen-lockfile
+
+WORKDIR /app/backend/services/logs
+
+EXPOSE 3500
+
+CMD ["pnpm", "start"]
+
+# Production stage for plugins
+FROM node:18-alpine AS plugins
+
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY nx.json tsconfig.base.json ./
+
+# Copy built files
+COPY --from=build /app/backend/erxes-api-shared ./backend/erxes-api-shared
+COPY --from=build /app/backend/plugins ./backend/plugins
+
+# Install production dependencies only
+RUN pnpm install --prod --frozen-lockfile
+
+# This is a base image for plugin services
+# Each plugin will be run separately with different CMD

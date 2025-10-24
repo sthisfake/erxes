@@ -1,0 +1,122 @@
+version: '3.8'
+
+# Development override configuration
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  mongodb:
+    ports:
+      - "27017:27017"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  elasticsearch:
+    ports:
+      - "9200:9200"
+
+  core-api:
+    build:
+      target: base
+    command: pnpm dev
+    volumes:
+      - ./backend/core-api:/app/backend/core-api
+      - ./backend/erxes-api-shared:/app/backend/erxes-api-shared
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  gateway:
+    build:
+      target: base
+    command: pnpm dev
+    volumes:
+      - ./backend/gateway:/app/backend/gateway
+      - ./backend/erxes-api-shared:/app/backend/erxes-api-shared
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  automations:
+    build:
+      target: base
+    command: pnpm dev
+    volumes:
+      - ./backend/services/automations:/app/backend/services/automations
+      - ./backend/erxes-api-shared:/app/backend/erxes-api-shared
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  logs:
+    build:
+      target: base
+    command: pnpm dev
+    volumes:
+      - ./backend/services/logs:/app/backend/services/logs
+      - ./backend/erxes-api-shared:/app/backend/erxes-api-shared
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  operation-api:
+    build:
+      target: base
+    command: pnpm dev
+    volumes:
+      - ./backend/plugins/operation_api:/app/backend/plugins/operation_api
+      - ./backend/erxes-api-shared:/app/backend/erxes-api-shared
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  frontline-api:
+    build:
+      target: base
+    command: pnpm dev
+    volumes:
+      - ./backend/plugins/frontline_api:/app/backend/plugins/frontline_api
+      - ./backend/erxes-api-shared:/app/backend/erxes-api-shared
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  sales-api:
+    build:
+      target: base
+    command: pnpm dev
+    volumes:
+      - ./backend/plugins/sales_api:/app/backend/plugins/sales_api
+      - ./backend/erxes-api-shared:/app/backend/erxes-api-shared
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  payment-api:
+    build:
+      target: base
+    command: pnpm dev
+    volumes:
+      - ./backend/plugins/payment_api:/app/backend/plugins/payment_api
+      - ./backend/erxes-api-shared:/app/backend/erxes-api-shared
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+
+  frontend:
+    build:
+      target: development
+    volumes:
+      - ./frontend:/app/frontend
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      REACT_APP_API_URL: http://localhost:4000
+    ports:
+      - "3001:3001"

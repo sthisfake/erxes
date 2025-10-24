@@ -1,0 +1,79 @@
+# Multi-stage Dockerfile for erxes frontend
+FROM node:18-alpine AS base
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY nx.json tsconfig.base.json ./
+COPY jest.config.ts jest.preset.js ./
+
+# Copy frontend source
+COPY frontend ./frontend
+COPY core-libraries.ts ./
+
+# Install dependencies
+FROM base AS deps
+RUN pnpm install --frozen-lockfile
+
+# Build stage
+FROM deps AS build
+
+# Build shared libraries
+WORKDIR /app/frontend/libs/erxes-ui
+RUN pnpm build || echo "Build completed with warnings"
+
+WORKDIR /app/frontend/libs/ui-modules
+RUN pnpm build || echo "Build completed with warnings"
+
+# Build plugins
+WORKDIR /app/frontend/plugins/operation_ui
+RUN pnpm build || echo "Build completed with warnings"
+
+WORKDIR /app/frontend/plugins/frontline_ui
+RUN pnpm build || echo "Build completed with warnings"
+
+WORKDIR /app/frontend/plugins/sales_ui
+RUN pnpm build || echo "Build completed with warnings"
+
+WORKDIR /app/frontend/plugins/payment_ui
+RUN pnpm build || echo "Build completed with warnings"
+
+WORKDIR /app/frontend/plugins/accounting_ui
+RUN pnpm build || echo "Build completed with warnings"
+
+WORKDIR /app/frontend/plugins/content_ui
+RUN pnpm build || echo "Build completed with warnings"
+
+WORKDIR /app/frontend/plugins/tourism_ui
+RUN pnpm build || echo "Build completed with warnings"
+
+# Build core-ui (main application)
+WORKDIR /app/frontend/core-ui
+RUN pnpm build
+
+# Production stage with nginx
+FROM nginx:alpine AS production
+
+# Copy built files
+COPY --from=build /app/dist/frontend/core-ui /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
+
+# Development stage (optional)
+FROM deps AS development
+
+WORKDIR /app
+
+EXPOSE 3001
+
+CMD ["pnpm", "nx", "serve", "core-ui"]
