@@ -1,4 +1,4 @@
-import { fileTypeFromBuffer } from 'file-type/core';
+import fileType from 'file-type';
 import * as fs from 'fs';
 import { Jimp } from 'jimp';
 import { tmpdir } from 'os';
@@ -70,7 +70,7 @@ export const checkFile = async (
   const buffer = await fs.promises.readFile(file.filepath);
 
   // determine file type using magic numbers
-  const ft = await fileTypeFromBuffer(buffer);
+  const ft = await fileType.fromBuffer(buffer);
 
   const unsupportedMimeTypes = [
     'text/csv',
@@ -96,7 +96,7 @@ export const checkFile = async (
     return 'Invalid file type';
   }
 
-  let { mime } = ft;
+  let mime: string = ft.mime;
 
   if (
     mime === 'application/zip' &&

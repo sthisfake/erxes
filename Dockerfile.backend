@@ -7,8 +7,9 @@ RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Copy package files (pnpm-lock.yaml is optional)
+COPY package.json pnpm-workspace.yaml ./
+COPY pnpm-lock.yaml* ./
 COPY nx.json tsconfig.base.json ./
 
 # Copy backend source
@@ -17,7 +18,9 @@ COPY core-libraries.ts ./
 
 # Install dependencies
 FROM base AS deps
-RUN pnpm install --no-frozen-lockfile
+# Use BuildKit cache mount to cache pnpm store
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --no-frozen-lockfile
 
 # Build stage
 FROM deps AS build
@@ -78,15 +81,17 @@ RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 WORKDIR /app
 
 # Copy package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml ./
+COPY pnpm-lock.yaml* ./
 COPY nx.json tsconfig.base.json ./
 
 # Copy built files
 COPY --from=build /app/backend/erxes-api-shared ./backend/erxes-api-shared
 COPY --from=build /app/backend/core-api ./backend/core-api
 
-# Install production dependencies only
-RUN pnpm install --prod --no-frozen-lockfile
+# Install all dependencies (tsconfig-paths is needed at runtime)
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --no-frozen-lockfile
 
 WORKDIR /app/backend/core-api
 
@@ -102,15 +107,17 @@ RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 WORKDIR /app
 
 # Copy package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml ./
+COPY pnpm-lock.yaml* ./
 COPY nx.json tsconfig.base.json ./
 
 # Copy built files
 COPY --from=build /app/backend/erxes-api-shared ./backend/erxes-api-shared
 COPY --from=build /app/backend/gateway ./backend/gateway
 
-# Install production dependencies only
-RUN pnpm install --prod --no-frozen-lockfile
+# Install all dependencies (tsconfig-paths is needed at runtime)
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --no-frozen-lockfile
 
 WORKDIR /app/backend/gateway
 
@@ -126,15 +133,17 @@ RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 WORKDIR /app
 
 # Copy package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml ./
+COPY pnpm-lock.yaml* ./
 COPY nx.json tsconfig.base.json ./
 
 # Copy built files
 COPY --from=build /app/backend/erxes-api-shared ./backend/erxes-api-shared
 COPY --from=build /app/backend/services/automations ./backend/services/automations
 
-# Install production dependencies only
-RUN pnpm install --prod --no-frozen-lockfile
+# Install all dependencies (tsconfig-paths is needed at runtime)
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --no-frozen-lockfile
 
 WORKDIR /app/backend/services/automations
 
@@ -150,15 +159,17 @@ RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 WORKDIR /app
 
 # Copy package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml ./
+COPY pnpm-lock.yaml* ./
 COPY nx.json tsconfig.base.json ./
 
 # Copy built files
 COPY --from=build /app/backend/erxes-api-shared ./backend/erxes-api-shared
 COPY --from=build /app/backend/services/logs ./backend/services/logs
 
-# Install production dependencies only
-RUN pnpm install --prod --no-frozen-lockfile
+# Install all dependencies (tsconfig-paths is needed at runtime)
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --no-frozen-lockfile
 
 WORKDIR /app/backend/services/logs
 
@@ -174,15 +185,17 @@ RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 WORKDIR /app
 
 # Copy package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml ./
+COPY pnpm-lock.yaml* ./
 COPY nx.json tsconfig.base.json ./
 
 # Copy built files
 COPY --from=build /app/backend/erxes-api-shared ./backend/erxes-api-shared
 COPY --from=build /app/backend/plugins ./backend/plugins
 
-# Install production dependencies only
-RUN pnpm install --prod --no-frozen-lockfile
+# Install all dependencies (tsconfig-paths is needed at runtime)
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --no-frozen-lockfile
 
 # This is a base image for plugin services
 # Each plugin will be run separately with different CMD

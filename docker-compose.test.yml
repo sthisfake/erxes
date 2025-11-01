@@ -1,0 +1,123 @@
+version: '3.8'
+
+# Simplified test configuration - Infrastructure only + Core services
+# This builds only the essential services for quick testing
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:6
+    container_name: erxes-test-mongodb
+    environment:
+      MONGO_INITDB_DATABASE: erxes
+    volumes:
+      - test_mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - erxes-test-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: erxes-test-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - test_redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - erxes-test-network
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: erxes-test-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: erxes
+      RABBITMQ_DEFAULT_PASS: erxes123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - erxes-test-network
+
+  # Core API Service
+  core-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      target: core-api
+    container_name: erxes-test-core-api
+    environment:
+      NODE_ENV: production
+      PORT: 3300
+      MONGO_URL: mongodb://mongodb:27017/erxes
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      RABBITMQ_HOST: amqp://erxes:erxes123@rabbitmq:5672
+      DOMAIN: http://localhost:3001
+      ALLOWED_DOMAINS: http://localhost:3001
+      NODE_OPTIONS: --max-old-space-size=1536
+    ports:
+      - "3300:3300"
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+    networks:
+      - erxes-test-network
+
+  # Gateway Service
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      target: gateway
+    container_name: erxes-test-gateway
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      MONGO_URL: mongodb://mongodb:27017/erxes
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      RABBITMQ_HOST: amqp://erxes:erxes123@rabbitmq:5672
+      DOMAIN: http://localhost:3001
+      NODE_OPTIONS: --max-old-space-size=1536
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+      - core-api
+    networks:
+      - erxes-test-network
+
+  # Frontend Application
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      target: production
+    container_name: erxes-test-frontend
+    environment:
+      REACT_APP_API_URL: http://gateway:4000
+    ports:
+      - "3001:80"
+    depends_on:
+      - gateway
+    networks:
+      - erxes-test-network
+
+volumes:
+  test_mongodb_data:
+    driver: local
+  test_redis_data:
+    driver: local
+
+networks:
+  erxes-test-network:
+    driver: bridge
