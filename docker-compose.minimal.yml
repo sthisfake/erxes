@@ -112,6 +112,7 @@ services:
       REDIS_PASSWORD: ""
       RABBITMQ_HOST: amqp://erxes:erxes123@rabbitmq:5672
       DOMAIN: ${DOMAIN:-http://localhost:3001}
+      CORE_API_URL: http://erxes-core-api:3300
       NODE_OPTIONS: --max-old-space-size=1536
     ports:
       - "4000:4000"

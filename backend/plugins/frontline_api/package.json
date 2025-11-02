@@ -19,7 +19,7 @@
     "fbgraph": "^1.4.4",
     "moment-timezone": "^0.5.48",
     "redlock": "5.0.0-beta.2",
-    "string-strip-html": "^13.4.12",
+    "string-strip-html": "^8.3.0",
     "strip-html": "^1.0.2"
   }
 }

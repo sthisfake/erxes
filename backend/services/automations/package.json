@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "debug": "^4.4.0",
     "erxes-api-shared": "workspace:^",
     "tslib": "^2.6.3"
   },
