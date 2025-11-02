@@ -100,9 +100,10 @@ EXPOSE 3300
 CMD ["pnpm", "start"]
 
 # Production stage for gateway
-FROM node:18-alpine AS gateway
+FROM node:18-slim AS gateway
 
-RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate && \
+    apt-get update && apt-get install -y wget curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
