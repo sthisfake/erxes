@@ -79,6 +79,7 @@ services:
       DOMAIN: ${DOMAIN:-http://localhost:3001}
       ALLOWED_DOMAINS: ${ALLOWED_DOMAINS:-http://localhost:3001}
       CLIENT_PORTAL_DOMAINS: ${CLIENT_PORTAL_DOMAINS:-}
+      LOAD_BALANCER_ADDRESS: http://erxes-core-api:3300
       NODE_OPTIONS: --max-old-space-size=1536
     ports:
       - "3300:3300"
