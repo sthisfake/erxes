@@ -1,11 +1,9 @@
-version: '3.8'
-
 # Minimal working deployment - only core services without problematic plugins
 
 services:
   # MongoDB Database
   mongodb:
-    image: mongo:6
+    image: mongo:4.4
     container_name: erxes-mongodb
     restart: unless-stopped
     environment:
@@ -17,7 +15,7 @@ services:
     networks:
       - erxes-network
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
