@@ -122,6 +122,12 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 
 WORKDIR /app/backend/gateway
 
+# Download Apollo Router for production
+RUN mkdir -p dist/src/apollo-router/temp && \
+    cd dist/src/apollo-router/temp && \
+    curl -sSL https://router.apollo.dev/download/nix/v1.59.2 | sh && \
+    chmod +x router
+
 EXPOSE 4000
 
 CMD ["pnpm", "start"]
